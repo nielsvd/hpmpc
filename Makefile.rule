@@ -68,7 +68,6 @@ TOP = $(dir $(lastword $(MAKEFILE_LIST)))
 COMMON_FLAGS = -O2 -fPIC #-std=c99
 ifeq ($(QEMU_TARGET), ON)
 override CC = /home/user/Xilinx/SDSoC/2016.2/SDK/2016.2/gnu/aarch64/lin/aarch64-linux/bin/aarch64-linux-gnu-gcc
-COMMON_FLAGS += -L/home/user/Xilinx/SDSoC/2016.2/SDK/2016.2/gnu/aarch64/lin/aarch64-linux/aarch64-linux-gnu/libc/usr/lib/aarch64-linux-gnu
 COMMON_FLAGS += -I/home/user/Xilinx/SDSoC/2016.2/SDK/2016.2/gnu/aarch64/lin/aarch64-linux/aarch64-linux-gnu/include/c++/4.9.2
 COMMON_FLAGS += -I/home/user/Xilinx/SDSoC/2016.2/SDK/2016.2/gnu/aarch64/lin/aarch64-linux/aarch64-linux-gnu/include/c++/4.9.2/aarch64-linux-gnu
 COMMON_FLAGS += -I/home/user/Xilinx/SDSoC/2016.2/SDK/2016.2/gnu/aarch64/lin/aarch64-linux/aarch64-linux-gnu/include/c++/4.9.2/backward
@@ -91,7 +90,11 @@ ifeq ($(OS), WINDOWS)
 COMMON_FLAGS += -DOS_WINDOWS
 endif
 DEBUG = #-Wall -pedantic -Wfloat-equal #-pg
+ifeq ($(QEMU_TARGET), ON)
+LDFLAGS = -L/home/user/Xilinx/SDSoC/2016.2/SDK/2016.2/gnu/aarch64/lin/aarch64-linux/aarch64-linux-gnu/libc/usr/lib/aarch64-linux-gnu
+else
 LDFLAGS =
+endif
 
 # Reference code linking to standard BLAS and LAPACK
 REF_BLAS = 0
