@@ -47,10 +47,10 @@
 
 // use iterative refinement to increase accuracy of the solution of the equality constrained sub-problems
 #define ITER_REF 0
-#define THR_ITER_REF 1e-25
+#define THR_ITER_REF 1e-5
 //#define ITER_REF_REG 0.0
 #define CORRECTOR_LOW 1
-#define CORRECTOR_HIGH 0
+#define CORRECTOR_HIGH 1
 
 
 
@@ -1963,7 +1963,7 @@ int d_ip2_res_mpc_hard_libstr(int *kk, int k_max, double mu0, double mu_tol, dou
 	struct d_strmat *hsmatdummy;
 	struct d_strvec *hsvecdummy;
 
-	struct d_strvec hsb[N+1];
+	struct d_strvec hsb[N];
 	struct d_strvec hsrq[N+1];
 	struct d_strvec hsQx[N+1];
 	struct d_strvec hsqx[N+1];
@@ -1977,7 +1977,7 @@ int d_ip2_res_mpc_hard_libstr(int *kk, int k_max, double mu0, double mu_tol, dou
 	struct d_strmat hsL[N+1];
 	struct d_strmat hsLxt[N+1];
 	struct d_strvec hsres_rq[N+1];
-	struct d_strvec hsres_b[N+1];
+	struct d_strvec hsres_b[N];
 	struct d_strvec hsres_d[N+1];
 	struct d_strvec hsres_m[N+1];
 	struct d_strmat hsric_work_mat[2];
@@ -2003,9 +2003,9 @@ int d_ip2_res_mpc_hard_libstr(int *kk, int k_max, double mu0, double mu_tol, dou
 		}
 
 	// b as vector
-	for(ii=0; ii<=N; ii++)
+	for(ii=0; ii<N; ii++)
 		{
-		d_create_strvec(nx[ii], &hsb[ii], work_memory);
+		d_create_strvec(nx[ii+1], &hsb[ii], work_memory);
 		work_memory += hsb[ii].memory_size;
 		}
 
@@ -2078,9 +2078,9 @@ int d_ip2_res_mpc_hard_libstr(int *kk, int k_max, double mu0, double mu_tol, dou
 		work_memory += hsres_rq[ii].memory_size;
 		}
 
-	for(ii=0; ii<=N; ii++)
+	for(ii=0; ii<N; ii++)
 		{
-		d_create_strvec(nx[ii], &hsres_b[ii], work_memory);
+		d_create_strvec(nx[ii+1], &hsres_b[ii], work_memory);
 		work_memory += hsres_b[ii].memory_size;
 		}
 
@@ -2097,9 +2097,9 @@ int d_ip2_res_mpc_hard_libstr(int *kk, int k_max, double mu0, double mu_tol, dou
 		}
 
 	// riccati work space
-	d_create_strmat(nzM, nxgM, &hsric_work_mat[0], work_memory);
+	d_create_strmat(nzM, nxgM, &hsric_work_mat[0], work_memory); // TODO use void ** and create_strmat in riccati at each stage ???
 	work_memory += hsric_work_mat[0].memory_size;
-	d_create_strmat(nzM, nxgM, &hsric_work_mat[1], work_memory);
+	d_create_strmat(nzM, nxgM, &hsric_work_mat[1], work_memory); // TODO use void ** and create_strmat in riccati at each stage ???
 	work_memory += hsric_work_mat[1].memory_size;
 
 	d_create_strvec(nzM, &hsric_work_vec[0], work_memory);
@@ -2121,9 +2121,9 @@ int d_ip2_res_mpc_hard_libstr(int *kk, int k_max, double mu0, double mu_tol, dou
 	
 
 	// extract b
-	for(jj=1; jj<=N; jj++)
+	for(jj=0; jj<N; jj++)
 		{
-		drowex_libstr(nx[jj], 1.0, &hsBAbt[jj], nu[jj-1]+nx[jj-1], 0, &hsb[jj], 0);
+		drowex_libstr(nx[jj+1], 1.0, &hsBAbt[jj], nu[jj]+nx[jj], 0, &hsb[jj], 0);
 		}
 
 	// extract q
@@ -2357,10 +2357,10 @@ exit(1);
 printf("\nalpha = %f\n", alpha);
 printf("\ndt\n");
 for(ii=0; ii<=N; ii++)
-	d_print_mat(1, 2*nb[ii]+2*ng[ii], dt[ii], 1);
+	d_print_tran_strvec(2*nb[ii]+2*ng[ii], &hsdt[ii], 0);
 printf("\ndlam\n");
 for(ii=0; ii<=N; ii++)
-	d_print_mat(1, 2*nb[ii]+2*ng[ii], dlam[ii], 1);
+	d_print_tran_strvec(2*nb[ii]+2*ng[ii], &hsdlam[ii], 0);
 exit(2);
 #endif
 
@@ -2423,16 +2423,16 @@ for(ii=0; ii<=N; ii++)
 #if 0
 printf("\nux\n");
 for(jj=0; jj<=N; jj++)
-	d_print_mat(1, nu[jj]+nx[jj], ux[jj], 1);
+	d_print_tran_strvec(nu[jj]+nx[jj], &hsux[jj], 0);
 printf("\npi\n");
 for(jj=1; jj<=N; jj++)
-	d_print_mat(1, nx[jj], pi[jj], 1);
+	d_print_tran_strvec(nx[jj], &hspi[jj], 0);
 printf("\nlam\n");
 for(ii=0; ii<=N; ii++)
-	d_print_mat(1, 2*nb[ii]+2*ng[ii], lam[ii], 1);
+	d_print_tran_strvec(2*nb[ii]+2*ng[ii], &hslam[ii], 0);
 printf("\nt\n");
 for(ii=0; ii<=N; ii++)
-	d_print_mat(1, 2*nb[ii]+2*ng[ii], t[ii], 1);
+	d_print_tran_strvec(2*nb[ii]+2*ng[ii], &hst[ii], 0);
 exit(2);
 #endif
 
@@ -2445,12 +2445,13 @@ exit(2);
 	d_res_res_mpc_hard_libstr(N, nx, nu, nb, idxb, ng, hsBAbt, hsb, hsRSQrq, hsrq, hsux, hsDCt, hsd, hspi, hslam, hst, hsres_work, hsres_rq, hsres_b, hsres_d, hsres_m, &mu);
 
 #if 0
+	printf("kk = %d\n", *kk);
 	printf("\nres_q\n");
 	for(jj=0; jj<=N; jj++)
 		d_print_e_tran_strvec(nu[jj]+nx[jj], &hsres_rq[jj], 0);
 	printf("\nres_b\n");
-	for(jj=0; jj<=N; jj++)
-		d_print_e_tran_strvec(nx[jj], &hsres_b[jj], 0);
+	for(jj=0; jj<N; jj++)
+		d_print_e_tran_strvec(nx[jj+1], &hsres_b[jj], 0);
 	printf("\nres_d\n");
 	for(jj=0; jj<=N; jj++)
 		d_print_e_tran_strvec(2*nb[jj]+2*ng[jj], &hsres_d[jj], 0);
@@ -2489,9 +2490,9 @@ printf("\nIPM it %d\n", *kk);
 
 #if 0
 for(ii=0; ii<=N; ii++)
-	d_print_mat(1, pnb[ii]+png[ii], Qx[ii], 1);
+	d_print_tran_strvec(nb[ii]+ng[ii], &hsQx[ii], 0);
 for(ii=0; ii<=N; ii++)
-	d_print_mat(1, pnb[ii]+png[ii], qx[ii], 1);
+	d_print_tran_strvec(nb[ii]+ng[ii], &hsqx[ii], 0);
 //if(*kk==1)
 exit(1);
 #endif
@@ -2622,6 +2623,21 @@ exit(1);
 
 
 #else // no iterative refinement
+#if 0
+for(ii=0; ii<=N; ii++)
+	d_print_e_tran_strvec(nu[ii]+nx[ii], &hsres_rq[ii], 0);
+for(ii=0; ii<N; ii++)
+	d_print_e_tran_strvec(nx[ii+1], &hsres_b[ii], 0);
+for(ii=0; ii<=N; ii++)
+	d_print_tran_strvec(nb[ii]+ng[ii], &hsQx[ii], 0);
+for(ii=0; ii<=N; ii++)
+	d_print_tran_strvec(nb[ii]+ng[ii], &hsqx[ii], 0);
+for(ii=0; ii<=N; ii++)
+	d_print_strmat(nu[ii]+nx[ii], nu[ii]+nx[ii], &hsRSQrq[ii], 0, 0);
+for(ii=0; ii<N; ii++)
+	d_print_strmat(nu[ii]+nx[ii], nx[ii+1], &hsBAbt[ii+1], 0, 0);
+exit(1);
+#endif
 #if 1
 		d_back_ric_rec_sv_libstr(N, nx, nu, nb, idxb, ng, 1, hsBAbt, hsres_b, 1, hsRSQrq, hsres_rq, hsDCt, hsQx, hsqx, hsdux, compute_mult, hsdpi, 1, hsPb, hsL, hsLxt, hsric_work_mat, hsric_work_vec);
 #else
@@ -2840,7 +2856,7 @@ exit(1);
 
 		// solve the KKT system
 //		d_back_ric_rec_trs_tv_res(N, nx, nu, pBAbt, res_b, pL, dL, res_q, l, dux, work, 0, Pb, compute_mult, dpi, nb, idxb, ng, pDCt, qx);
-		d_back_ric_rec_trs_libstr(N, nx, nu, nb2, idxb, ng, hsBAbt, hsres_b, hsres_q, hsDCt, hsqx, hsdux, compute_mult, hsdpi, 0, hsPb, hsL, hsLxt, hswork_vec);
+		d_back_ric_rec_trs_libstr(N, nx, nu, nb, idxb, ng, hsBAbt, hsres_b, hsres_rq, hsDCt, hsqx, hsdux, compute_mult, hsdpi, 0, hsPb, hsL, hsLxt, hsric_work_vec);
 
 
 #endif
@@ -2858,16 +2874,16 @@ exit(1);
 printf("\nalpha = %f\n", alpha);
 printf("\nd\n");
 for(ii=0; ii<=N; ii++)
-	d_print_mat(1, 2*nb[ii]+2*ng[ii], d[ii], 1);
+	d_print_tran_strvec(2*nb[ii]+2*ng[ii], &hsd[ii], 0);
 printf("\nres_d\n");
 for(ii=0; ii<=N; ii++)
-	d_print_mat(1, 2*nb[ii]+2*ng[ii], res_d[ii], 1);
+	d_print_tran_strvec(2*nb[ii]+2*ng[ii], &hsres_d[ii], 0);
 printf("\ndt\n");
 for(ii=0; ii<=N; ii++)
-	d_print_mat(1, 2*nb[ii]+2*ng[ii], dt[ii], 1);
+	d_print_tran_strvec(2*nb[ii]+2*ng[ii], &hsdt[ii], 0);
 printf("\ndlam\n");
 for(ii=0; ii<=N; ii++)
-	d_print_mat(1, 2*nb[ii]+2*ng[ii], dlam[ii], 1);
+	d_print_tran_strvec(2*nb[ii]+2*ng[ii], &hsdlam[ii], 0);
 exit(2);
 #endif
 
@@ -2883,7 +2899,7 @@ exit(2);
 //		d_update_var_res_mpc_hard_tv(N, nx, nu, nb, ng, alpha, ux, dux, pi, dpi, t, dt, lam, dlam);
 
 
-#if 1
+#if 0
 printf("\nux\n");
 for(ii=0; ii<=N; ii++)
 	d_print_tran_strvec(nu[ii]+nx[ii], &hsux[ii], 0);
@@ -2902,18 +2918,18 @@ for(ii=0; ii<=N; ii++)
 
 
 		// restore dynamics
-		for(jj=1; jj<=N; jj++)
-			drowin_libstr(nx[jj], 1.0, &hsb[jj], 0, &hsBAbt[jj], nu[jj-1]+nx[jj-1], 0);
+		for(jj=0; jj<N; jj++)
+			drowin_libstr(nx[jj+1], 1.0, &hsb[jj], 0, &hsBAbt[jj], nu[jj]+nx[jj], 0);
 
 		d_res_res_mpc_hard_libstr(N, nx, nu, nb, idxb, ng, hsBAbt, hsb, hsRSQrq, hsrq, hsux, hsDCt, hsd, hspi, hslam, hst, hsres_work, hsres_rq, hsres_b, hsres_d, hsres_m, &mu);
 
-#if 1
+#if 0
 	printf("\nres_q\n");
 	for(jj=0; jj<=N; jj++)
 		d_print_e_tran_strvec(nu[jj]+nx[jj], &hsres_rq[jj], 0);
 	printf("\nres_b\n");
-	for(jj=0; jj<=N; jj++)
-		d_print_e_tran_strvec(nx[jj], &hsres_b[jj], 0);
+	for(jj=0; jj<N; jj++)
+		d_print_e_tran_strvec(nx[jj+1], &hsres_b[jj], 0);
 	printf("\nres_d\n");
 	for(jj=0; jj<=N; jj++)
 		d_print_e_tran_strvec(2*nb[jj]+2*ng[jj], &hsres_d[jj], 0);
