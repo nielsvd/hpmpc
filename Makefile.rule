@@ -42,15 +42,15 @@ TARGET = X64_AVX
 #TARGET = CORTEX_A9
 #TARGET = CORTEX_A7
 #TARGET = C99_4X4
-#TARGET = C99_4X4_PREFETCH
 
 # use BLASFEO for the linear algebra
 USE_BLASFEO = 1
+BLASFEO_PATH = /opt/blasfeo
 
 # C Compiler
 CC = gcc
 #MINGW_ROOT = ~/cross_compiler_windows  (can be obtained here: https://sourceforge.net/projects/mingw-w64/files/)
-#CC = $(MINGW_ROOT)/mingw-w64-bin_x86_64-linux_20131228/bin/x86_64-w64-mingw32-gcc
+#CC = $(MINGW_ROOT)/mingw-w64-bin_x86_64-linux_20131228/bin/x86_64-w64-mingw32-gcc 
 #CC = /opt/gcc/bin/gcc # custom gcc
 #CC = clang
 
@@ -77,19 +77,19 @@ COMMON_FLAGS += -I/home/user/Xilinx/SDSoC/2016.2/SDK/2016.2/gnu/aarch64/lin/aarc
 COMMON_FLAGS += -I/home/user/Xilinx/SDSoC/2016.2/SDK/2016.2/gnu/aarch64/lin/aarch64-linux/lib/gcc/aarch64-linux-gnu/4.9.2/include-fixed
 endif
 ifeq ($(CC), /opt/gcc/bin/gcc )
-COMMON_FLAGS += -DCUSTOM_GCC
+COMMON_FLAGS += -DCUSTOM_GCC 
 ifeq ($(TARGET), X64_AVX2)
 #COMMON_FLAGS += -I/opt/gcc/lib/gcc/x86_64-unknown-linux-gnu/5.2.0/include
 COMMON_FLAGS += -I/opt/gcc/lib/gcc/x86_64-pc-linux-gnu/6.0.0/include
 endif
 endif
 ifeq ($(USE_BLASFEO), 1)
-COMMON_FLAGS += -DBLASFEO -I/opt/blasfeo/include -I$(TOP)../blasfeo/include -I$(TOP)../../../blasfeo/include
+COMMON_FLAGS += -DBLASFEO -I$(BLASFEO_PATH)/include
 endif
 ifeq ($(OS), WINDOWS)
 COMMON_FLAGS += -DOS_WINDOWS
 endif
-DEBUG = #-Wall -pedantic -Wfloat-equal #-pg
+DEBUG = #-g #-Wall -pedantic -Wfloat-equal #-pg
 ifeq ($(QEMU_TARGET), ON)
 LDFLAGS = -L/home/user/Xilinx/SDSoC/2016.2/SDK/2016.2/gnu/aarch64/lin/aarch64-linux/aarch64-linux-gnu/libc/usr/lib/aarch64-linux-gnu
 else
@@ -103,7 +103,7 @@ REF_BLAS = 0
 #REF_BLAS = NETLIB
 #REF_BLAS = MKL
 ifeq ($(REF_BLAS), 0)
-REF_BLAS_FLAGS =
+REF_BLAS_FLAGS = 
 endif
 ifeq ($(REF_BLAS), OPENBLAS)
 REF_BLAS_FLAGS = -DREF_BLAS_OPENBLAS
@@ -151,3 +151,5 @@ endif
 ifeq ($(TARGET), CORTEX_A7)
 CFLAGS = $(COMMON_FLAGS) -marm -mfloat-abi=hard -mfpu=neon-vfpv4 -mcpu=cortex-a7 -DTARGET_CORTEX_A7 $(REF_BLAS_FLAGS) $(DEBUG)
 endif
+
+
